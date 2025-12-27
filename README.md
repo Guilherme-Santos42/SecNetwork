@@ -172,3 +172,73 @@ TESTING:
 VPN: Ping from PC2 to PC3. Then run show crypto isakmp sa. Status should be QM_IDLE.
 DMZ: Ping from Server1 to PC2. It should fail (Blocked by ACL).
 Hardening: Unplug PC2 and plug in a different PC. The switch port should turn red (Shutdown).
+
+
+No mundo ideal a configuração perfeita seria se adicionassemos firewalls de próxima geração (NGFW), nos lugares dos roteadores, no entanto no packet tracer possuimos certas limitações. Seria interessante também adicionarmos um servidor RADIUS/AAA e também um IDS, ou SIEM para monitoramento de alertas gerados na rede, No entanto encontrei problemas para configurar o servidor SNMP e syslog.
+Ficaria mais ou menos assim ( Sem servidor AAA):
+<img width="817" height="553" alt="image" src="https://github.com/user-attachments/assets/022feaf1-c513-4b0c-93d3-fb60c78deb8f" />
+
+Configuração FW 1 :
+# 1. Definir o tráfego que deve passar pela VPN (Interessante)
+ciscoasa(config)# access-list VPN_ACL extended permit ip 192.168.10.0 255.255.255.0 192.168.20.0 255.255.255.0
+
+# 2. Fase 1 - IKEv1 Policy
+ciscoasa(config)# crypto ikev1 policy 10
+ciscoasa(config-ikev1-policy)# encryption aes
+ciscoasa(config-ikev1-policy)# hash sha
+ciscoasa(config-ikev1-policy)# authentication pre-share
+ciscoasa(config-ikev1-policy)# group 2
+ciscoasa(config-ikev1-policy)# lifetime 86400
+
+# 3. Fase 2 - Transform Set
+ciscoasa(config)# crypto ipsec ikev1 transform-set ESP_SET esp-aes esp-sha-hmac
+
+# 4. Tunnel Group (Onde definimos a senha/peer)
+ciscoasa(config)# tunnel-group 10.0.0.2 type ipsec-l2l
+ciscoasa(config)# tunnel-group 10.0.0.2 ipsec-attributes
+ciscoasa(config-tunnel-ipsec)# ikev1 pre-shared-key cisco123
+
+# 5. Crypto Map e Ativação
+ciscoasa(config)# crypto map MY_MAP 10 match address VPN_ACL
+ciscoasa(config)# crypto map MY_MAP 10 set peer 10.0.0.2
+ciscoasa(config)# crypto map MY_MAP 10 set ikev1 transform-set ESP_SET
+ciscoasa(config)# crypto map MY_MAP interface outside
+ciscoasa(config)# crypto ikev1 enable outside
+
+Configuração FW 2:
+# Configuração de Interface
+ciscoasa(config)# interface g1/1
+ciscoasa(config-if)# nameif outside
+ciscoasa(config-if)# ip address 10.0.0.2 255.255.255.252
+ciscoasa(config-if)# no shutdown
+
+ciscoasa(config)# interface g1/2
+ciscoasa(config-if)# nameif inside
+ciscoasa(config-if)# ip address 192.168.20.1 255.255.255.0
+ciscoasa(config-if)# no shutdown
+
+# Rota para chegar na HQ
+ciscoasa(config)# route outside 192.168.10.0 255.255.255.0 10.0.0.1
+
+# VPN (Espelhada)
+ciscoasa(config)# access-list VPN_ACL extended permit ip 192.168.20.0 255.255.255.0 192.168.10.0 255.255.255.0
+ciscoasa(config)# crypto ikev1 policy 10
+ciscoasa(config-ikev1-policy)# encryption aes
+ciscoasa(config-ikev1-policy)# hash sha
+ciscoasa(config-ikev1-policy)# authentication pre-share
+ciscoasa(config-ikev1-policy)# group 2
+ciscoasa(config)# tunnel-group 10.0.0.1 type ipsec-l2l
+ciscoasa(config)# tunnel-group 10.0.0.1 ipsec-attributes
+ciscoasa(config-tunnel-ipsec)# ikev1 pre-shared-key cisco123
+ciscoasa(config)# crypto ipsec ikev1 transform-set ESP_SET esp-aes esp-sha-hmac
+ciscoasa(config)# crypto map MY_MAP 10 match address VPN_ACL
+ciscoasa(config)# crypto map MY_MAP 10 set peer 10.0.0.1
+ciscoasa(config)# crypto map MY_MAP 10 set ikev1 transform-set ESP_SET
+ciscoasa(config)# crypto map MY_MAP interface outside
+ciscoasa(config)# crypto ikev1 enable outside
+
+Criei também um "SIEM", mas ao invés de usar SNMP ou syslog usei uma SPAN port no local, redirecionando o trafego pro dispositivo:
+
+Configuração no SWITCH da LAN:
+Switch(config)# monitor session 1 source interface g0/1
+Switch(config)# monitor session 1 destination interface g0/2
