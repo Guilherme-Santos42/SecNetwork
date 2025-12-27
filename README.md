@@ -7,7 +7,7 @@ Scheme:<br>
 
 Equipment configuration:
 
-#1- Global Preparation (License Activation) #
+#1- Global Preparation (License Activation) 
 Router(config)# license boot module c2900 technology-package securityk9
 Router(config)# exit
 Router# copy running-config startup-config
@@ -21,7 +21,7 @@ reload: Restarts the router to initialize the newly activated security features.
 
 *This activates the securityk9 license. Without this, the crypto command will be rejected by the CLI.
 
-#2- Router 3 Configuration (HQ & DMZ)#
+#2- Router 3 Configuration (HQ & DMZ)
 This router manages the Internal LAN, the DMZ (Public Server), and the "Headquarters" side of the VPN.
 
 Interfaces and Routing:
@@ -71,7 +71,7 @@ permit tcp any host ... eq 80: Allows web traffic (HTTP) from anywhere to reach 
 deny ip 172.16.0.0 ... 192.168.10.0 ...: Blocks the DMZ network from initiating any connection to the Internal LAN. This prevents "lateral movement" if the web server is compromised.
 ip access-group FW_DMZ in: Applies the rules to traffic entering the router from the DMZ interface.
 
-#3- Router 2 Configuration (Branch)#
+#3- Router 2 Configuration (Branch)
 
 Router2(config)# interface g0/0
 Router2(config-if)# ip address 10.0.0.2 255.255.255.252
@@ -83,7 +83,7 @@ Router2(config-if)# no shutdown
 
 Router2(config)# ip route 192.168.10.0 255.255.255.0 10.0.0.1
 
-#4- Site-to-Site VPN Implementation (IPsec)#
+#4- Site-to-Site VPN Implementation (IPsec)
 
 The configuration must be mirrored between the two routers.
 
@@ -130,7 +130,7 @@ Router2(config-crypto-map)# match address 110
 Router2(config)# interface g0/0
 Router2(config-if)# crypto map VPN_MAP
 
-#5- Device Hardening (L2 & L3)#
+#5- Device Hardening (L2 & L3)
 A. Switch Hardening (Layer 2): Apply to all switches to prevent unauthorized physical access.
 
 Switch(config)# interface range fa0/1-24
@@ -161,13 +161,13 @@ crypto key generate rsa: Generates the encryption keys needed for SSH.
 line vty 0 4: Configures the virtual terminal lines (remote access).
 transport input ssh: This is the critical security step—it explicitly forbids Telnet and only permits SSH.
 
-#6- Endpoint Addressing (Manual Configuration):#
+#6- Endpoint Addressing (Manual Configuration):
 Device,IP Address,Subnet Mask,Default Gateway(RESPECTIVELY)
 PC2 (HQ LAN),192.168.10.10,255.255.255.0,192.168.10.1
 Server1 (DMZ),172.16.0.10,255.255.255.0,172.16.0.1
 PC3 (Branch LAN),192.168.20.10,255.255.255.0,192.168.20.1
 
-#TESTING:#
+#TESTING:
 
 VPN: Ping from PC2 to PC3. Then run show crypto isakmp sa. Status should be QM_IDLE.
 DMZ: Ping from Server1 to PC2. It should fail (Blocked by ACL).
@@ -206,7 +206,8 @@ ciscoasa(config)# crypto map MY_MAP interface outside
 ciscoasa(config)# crypto ikev1 enable outside
 
 Configuração FW 2:
- Configuração de Interface
+
+ 1. Configuração de Interface
 ciscoasa(config)# interface g1/1
 ciscoasa(config-if)# nameif outside
 ciscoasa(config-if)# ip address 10.0.0.2 255.255.255.252
@@ -217,10 +218,10 @@ ciscoasa(config-if)# nameif inside
 ciscoasa(config-if)# ip address 192.168.20.1 255.255.255.0
 ciscoasa(config-if)# no shutdown
 
-Rota para chegar na HQ
+ 2. Rota para chegar na HQ
 ciscoasa(config)# route outside 192.168.10.0 255.255.255.0 10.0.0.1
 
-VPN (Espelhada)
+ 3. VPN (Espelhada)
 ciscoasa(config)# access-list VPN_ACL extended permit ip 192.168.20.0 255.255.255.0 192.168.10.0 255.255.255.0
 ciscoasa(config)# crypto ikev1 policy 10
 ciscoasa(config-ikev1-policy)# encryption aes
