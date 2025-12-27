@@ -167,13 +167,13 @@ PC2 (HQ LAN),192.168.10.10,255.255.255.0,192.168.10.1
 Server1 (DMZ),172.16.0.10,255.255.255.0,172.16.0.1
 PC3 (Branch LAN),192.168.20.10,255.255.255.0,192.168.20.1
 
-#TESTING:
+TESTING:
 
 VPN: Ping from PC2 to PC3. Then run show crypto isakmp sa. Status should be QM_IDLE.
 DMZ: Ping from Server1 to PC2. It should fail (Blocked by ACL).
 Hardening: Unplug PC2 and plug in a different PC. The switch port should turn red (Shutdown).
 
-
+# In an Ideal World...
 In an ideal world, the perfect configuration would be to add next-generation firewalls (NGFW) in place of the routers; however, Packet Tracer has certain limitations. It would also be interesting to add a RADIUS/AAA server and an IDS or SIEM for monitoring alerts generated on the network. However, I encountered problems configuring the SNMP and syslog servers.
 It would look something like this (without AAA server):
 <img width="817" height="553" alt="image" src="https://github.com/user-attachments/assets/022feaf1-c513-4b0c-93d3-fb60c78deb8f" />
