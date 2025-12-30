@@ -3,7 +3,8 @@ A network with a DMZ, VPN, Hardening, and ACLs.
 
 Scheme:<br>
 
-<img width="489" height="434" alt="image" src="https://github.com/user-attachments/assets/c3e60e7c-6699-41f4-9931-a1e595a7d446" />
+<img width="507" height="429" alt="image" src="https://github.com/user-attachments/assets/9c80915e-31b2-422a-bd73-9c375a51cb1e" />
+
 
 Equipment configuration:
 
